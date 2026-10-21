@@ -34,8 +34,9 @@ for i in range(10):
     response=call_llm(messages,tools=tools)
     response_history=extract_message(response)
     messages.append(response_history)
-    tool_call=response_history[-1]["tool_calls"][0]
-    if tool_call !=[] :
+    print("message",i, " ",messages)
+    if response_history.get("tool_calls", []) != [] :
+        tool_call=response_history["tool_calls"][0]
         tool_result=execute_tool(tool_call,registry)
         messages.append({"role":"tool","tool_call_id":tool_call["id"], "content":tool_result})
         
