@@ -56,6 +56,7 @@ __all__ = [
     "Database",
     "make_sql_tools",
     "Calculator",
+    "WordCounter"
     # Data
     "init_demo_db",
     "DB_PATH",

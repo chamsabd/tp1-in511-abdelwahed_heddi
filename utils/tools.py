@@ -116,3 +116,21 @@ class Calculator:
             ),
         }
         return ops[self.operation]()
+
+
+
+
+# ============================================================
+# WordCounter Tool 
+# ============================================================
+
+
+@dataclass
+class WordCounter:
+    """return the number of words 
+    
+    """
+    text: str
+    def __call__(self) -> int:
+        """Execute the word count and return the result."""
+        return len(self.text.split())
