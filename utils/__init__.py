@@ -37,7 +37,7 @@ from .llm import (
 )
 
 # Tools
-from .tools import Database, make_sql_tools, Calculator
+from .tools import Database, SafeReadOnlyDatabase, make_sql_tools, Calculator,WordCounter
 
 # Data
 from .data import init_demo_db, DB_PATH
@@ -54,9 +54,10 @@ __all__ = [
     "execute_tool",
     # Tools
     "Database",
+    "SafeReadOnlyDatabase",
     "make_sql_tools",
     "Calculator",
-    "WordCounter"
+    "WordCounter",
     # Data
     "init_demo_db",
     "DB_PATH",

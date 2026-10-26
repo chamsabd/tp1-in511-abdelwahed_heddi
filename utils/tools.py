@@ -3,6 +3,7 @@ Tool definitions: Database wrapper, SQL tools, Calculator.
 """
 
 import json
+import re
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
@@ -49,6 +50,49 @@ class Database:
         """Describe a table structure."""
         cursor = self.conn.execute(f"PRAGMA table_info({table_name})")
         return json.dumps([dict(row) for row in cursor.fetchall()])
+
+
+class SafeReadOnlyDatabase(Database):
+    """SQLite wrapper with read-only mode and SQL guardrails."""
+
+    BLOCKED_KEYWORDS = {"DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "CREATE"}
+    ALLOWED_START = ("SELECT", "WITH")
+
+    def __init__(self, path: str = "library.db"):
+        self.path = path
+        if not Path(path).exists():
+            init_demo_db(path)
+        self.conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        self.conn.row_factory = sqlite3.Row
+
+    def _is_query_allowed(self, query: str) -> tuple[bool, str]:
+        normalized = query.strip()
+        if not normalized:
+            return False, "Empty query"
+
+        upper = normalized.upper()
+        tokens = re.findall(r"[A-Z_]+", upper)
+
+        if any(keyword in tokens for keyword in self.BLOCKED_KEYWORDS):
+            return False, "Dangerous SQL keyword detected"
+
+        if not upper.startswith(self.ALLOWED_START):
+            return False, "Only SELECT and WITH queries are allowed"
+
+        return True, ""
+
+    def execute(self, query: str) -> str:
+        """Execute read-only SQL query with guardrails and return JSON."""
+        try:
+            ok, reason = self._is_query_allowed(query)
+            if not ok:
+                return json.dumps({"error": reason})
+
+            cursor = self.conn.execute(query)
+            rows = cursor.fetchall()
+            return json.dumps([dict(row) for row in rows], default=str)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
 
 
 # ============================================================
@@ -128,9 +172,14 @@ class Calculator:
 @dataclass
 class WordCounter:
     """return the number of words 
-    
+    language: french or english
+    countPunctuationCharacters: if True, count punctuation characters as words
+
     """
     text: str
+    language: Literal["french", "english"]
+    countPunctuationCharacters: bool = False
+    
     def __call__(self) -> int:
         """Execute the word count and return the result."""
         return len(self.text.split())
